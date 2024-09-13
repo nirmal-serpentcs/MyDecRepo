@@ -1,0 +1,84 @@
+<?xml version="1.0" ?>
+<odoo>
+    <template id="portal_my_home_shopfloor_ext" name="Portal ShopFloor">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Your Work-Orders</t>
+            </t>
+            <div class="row">
+                <div class="col-auto">
+                    <h4>My ShopFloor</h4>
+                </div>
+            </div>
+            <div t-if="not orders" class="alert alert-warning" role="alert">
+                There are currently no workorders for your account.
+            </div>
+            <span class="portal_shopfloor">
+                <t t-if="orders" t-call="portal.portal_table">
+                    <thead>
+                        <tr class="active">
+                            <th>
+                                <span class='d-none d-md-inline'>Work Order #</span>
+                                <span class='d-block d-md-none'>Ref.</span>
+                            </th>
+                            <th class="text-center">Expected Duration</th>
+                            <th class="text-center">Real Duration</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <div class="o_content o_component_with_search_panel">
+                        <div class="o_mrp_display_records flex-grow-1 m-2">
+                        <t t-foreach="orders" t-as="order">
+                            <t t-call="scs_shopfloor.portal_workorder_single">
+                                <t t-set="order" t-value="order"/>
+                            </t>
+                            <!-- <tr class="portal_my_home_shopfloor_ext">
+                                <td><t t-out="order.barcode"/> - <t t-out="order.name"/></td>
+                                <td class="text-center total_time"><t t-out="order.duration_expected" t-options="{'widget': 'float_time'}"/></td>
+                                <td class="text-center timerEl" t-att-id="'timer'+str(order.id)" t-att-data-order_id='order.id' t-att-data-is_user_working="order.is_user_working"><t t-out="order.duration" t-options="{'widget': 'float_time'}"/></td>
+                                <td class="text-center">
+                                    <t t-if="order.state == 'progress'">
+                                        <span t-field="order.state" class="badge rounded-pill text-bg-warning"/>
+                                    </t>
+                                    <t t-elif="order.state == 'done'">
+                                        <span t-field="order.state" class="badge rounded-pill text-bg-success"/>
+                                    </t>
+                                    <t t-elif="order.state == 'cancel'">
+                                        <span t-field="order.state" class="badge rounded-pill text-bg-danger"/>
+                                    </t>
+                                    <t t-else="">
+                                        <span t-field="order.state" class="badge rounded-pill text-bg-info"/>
+                                    </t>
+
+                                </td>
+                                <td class="text-end">
+                                    <t t-if="order.production_state not in ('draft', 'done', 'cancel') and 
+                                            order.working_state != 'blocked' and 
+                                            order.state not in ('done', 'cancel') and 
+                                            not order.is_user_working">
+                                        <a title="Start" aria-label="Start" t-att-data-order-id="order.id" t-attf-href="/work/order/{{order.id}}/start" class="startFloor btn btn-success btn-sm" role="button">
+                                            <span class='d-inline'>Start</span>
+                                        </a>
+                                    </t>
+                                    <t t-if="order.production_state not in ('draft', 'done', 'cancel') and 
+                                            order.working_state != 'blocked' and 
+                                            order.is_user_working">
+                                        <a title="Pause" aria-label="Pause" t-att-data-order-id="order.id" t-attf-href="/work/order/{{order.id}}/pause" class="pauseFloor btn btn-warning btn-sm" role="button">
+                                            <span class='d-inline'>Pause</span>
+                                        </a>
+                                        <a title="Done" aria-label="Done" t-att-data-order-id="order.id" t-attf-href="/work/order/{{order.id}}/done" class="stopFloor btn btn-success btn-sm" role="button">
+                                            <span class='d-inline'>Done</span>
+                                        </a>
+                                    </t>
+                                </td>
+                            </tr> -->
+                        </t>
+                        </div>
+                    </div>
+                </t>
+            </span>
+        </t>
+    </template>
+</odoo>

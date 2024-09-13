@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<odoo>
+    <template id="portal_home_shopfloor" name="Open Shop Floor" customize_show="True" inherit_id="portal.portal_my_home" priority="110">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="portal_client_category_enable" t-value="True"/>
+        </xpath>
+        <div id="portal_client_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/scs_shopfloor/static/src/img/order1.png'"/>
+                <t t-set="title">Shop Floor</t>
+                <t t-set="url" t-value="'/my/shopfloor'"/>
+                <t t-set="text">Follow &amp; view your WOs</t>
+                <t t-set="placeholder_count" t-value="'work_order_count'"/>
+            </t>
+        </div>
+    </template>
+    <template id="portal_my_home_menu_shop_floor" name="Portal layout : shop floor menu entries" inherit_id="portal.portal_breadcrumbs" priority="20">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'workorder'" t-attf-class="breadcrumb-item">
+                <t>Work Orders</t>
+            </li>
+        </xpath>
+    </template>
+    <record id="mrp_workorder_view_form_inherit" model="ir.ui.view">
+        <field name="name">mrp.workorder.view.form.inherit.workorder</field>
+        <field name="model">mrp.workorder</field>
+        <field name="inherit_id" ref="mrp.mrp_production_workorder_form_view_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_assigned_ids']" position="after">
+                <field name="assigned_user_ids" widget="many2many_avatar_user"/>
+            </xpath>
+            <xpath expr="//field[@name='time_ids']/tree/field[@name='employee_id']" position="before">
+                <field name="user_id"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="mrp_production_workorder_tree_editable_view_inherit" model="ir.ui.view">
+        <field name="name">mrp.production.work.order.tree.editable.inherit.mrp.workorder</field>
+        <field name="model">mrp.workorder</field>
+        <field name="inherit_id" ref="mrp.mrp_production_workorder_tree_editable_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='button_unblock']" position="after">
+                <field name="partner_ids" widget="many2many_avatar_user" readonly="1" nolabel="1"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="mrp_workcenter_view_form_inherit_shopfloor" model="ir.ui.view">
+        <field name="name">mrp.workcenter.form.inherit.shopfloor</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.mrp_workcenter_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_ids']" position="after">
+                <field name="allowed_user_ids" widget="many2many_avatar_user"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
