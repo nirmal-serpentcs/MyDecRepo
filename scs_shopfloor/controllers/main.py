@@ -3,17 +3,15 @@
 from odoo import http,_
 from odoo.addons.portal.controllers.portal import pager as portal_pager
 from odoo.addons.portal.controllers.portal import CustomerPortal
-from odoo.http import request
-import logging
+from odoo.http import request, content_disposition
+import logging, base64
 _logger = logging.getLogger(__name__)
 
 class ShopFloorController(CustomerPortal):
     
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
-        user_id = request.env.user
 
-        Workorders = request.env['mrp.workorder'].sudo()
         if 'work_order_count' in counters:
             values['work_order_count'] = 1
 
@@ -43,10 +41,11 @@ class ShopFloorController(CustomerPortal):
         )
         orders = WorkOrders.sudo().search([], limit=self._items_per_page, offset=pager_values['offset'])
         if orders:
-            orders = orders.sudo().filtered(lambda ord:user_id.id in ord.assigned_user_ids.ids)
+            orders = orders.sudo().filtered(lambda ord:user_id.id in ord.assigned_user_ids.ids or user_id.id in ord.workcenter_id.allowed_user_ids.ids)
+            
         values.update({
             'quotations': orders.sudo(),
-            'orders': orders.sudo() ,
+            'orders': orders.sudo(),
             'pager': pager_values,
             'page_name': 'workorder',
             'default_url': url,
@@ -54,6 +53,8 @@ class ShopFloorController(CustomerPortal):
         })
 
         return values
+    
+    
 
     
     @http.route(
@@ -80,7 +81,7 @@ class ShopFloorController(CustomerPortal):
                 work_order = request.env['mrp.workorder'].sudo().browse(int(work_order_id))
                 if work_order:
                     if action == 'start':
-                        work_order.sudo().button_start()
+                        work_order.sudo().button_start(True)
                     if action == 'pause':
                         work_order.sudo().button_pending()
                     if action == 'done':
@@ -88,3 +89,67 @@ class ShopFloorController(CustomerPortal):
             except Exception as e:
                 _logger.warning(e)
         return request.redirect("/my/shopfloor")
+    
+    
+    @http.route(
+        ["/my/shopfloor/worksheet/<int:work_order_id>"],
+        type="http",
+        auth="public",
+        website=True,
+        csrf=False,
+    )
+    def check_worksheet(self,work_order_id=False):
+        if work_order_id:
+            work_order = request.env['mrp.workorder'].sudo().browse(int(work_order_id))
+            if work_order and work_order.worksheet:
+                read_doc = base64.b64decode(work_order.worksheet)
+                pdfhttpheaders = [
+                    ("Content-Type", "application/pdf"),
+                    ("Content-Length", u'%s' % len(read_doc)),
+                ]
+                res = request.make_response(read_doc, headers=pdfhttpheaders)
+                return res
+            return False
+        return False
+    
+    @http.route(
+        ["/product/scrap/<int:workorder_id>"],
+        type="json",
+        auth="public",
+        website=True,
+        csrf=False,
+    )
+    def scrap_products_portal(self,workorder_id=False,**kw):
+        scrapOBJ = request.env['stock.scrap'].sudo()
+        productionOBJ = request.env['mrp.production'].sudo()
+        production_id = False
+        if kw.get('production_id', False):
+            production_id = productionOBJ.browse(int(kw['production_id']))
+        data = {
+            'workorder_id':workorder_id,
+            'production_id':production_id.id,
+            'company_id':production_id.company_id.id,
+            'should_replenish': True if kw.get('should_replenish',False) else False,
+            'scrap_qty':int(kw['scrap_qty']) if kw.get('scrap_qty',False) else False,
+            'product_id': int(kw['product_id']) if kw.get('product_id',False) else False,
+        }
+        scrap = scrapOBJ.create(data)
+        action = scrap.action_validate()
+        print('\n\n\n\n\n\n====scrapOBJ=',action)
+        return {'action':action, 'path':"/my/shopfloor"}
+    
+    @http.route(
+        ["/product/scrap/done/<int:scrap_id>"],
+        type="json",
+        auth="public",
+        website=True,
+        csrf=False,
+    )
+    def confirm_scrap_products_portal(self,scrap_id=False):
+        if scrap_id:      
+            scrap = request.env['stock.scrap'].sudo().browse(int(scrap_id))
+            if scrap:
+                scrap.do_scrap()
+                return True
+        return False
+            

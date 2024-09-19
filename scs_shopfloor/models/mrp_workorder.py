@@ -48,7 +48,6 @@ class MRPWorkOrder(models.Model):
                     raise UserError(_("You are not allowed to work on the workorder"))
 
         res = super().button_start()
-
         for wo in self:
             if len(wo.time_ids) == 1 or all(wo.time_ids.mapped('date_end')):
                 for check in wo.check_ids:
@@ -59,14 +58,41 @@ class MRPWorkOrder(models.Model):
                     wo.start_employee(self.env['hr.employee'].browse(main_employee).id)
                     wo.employee_ids |= self.env['hr.employee'].browse(main_employee)
             else:
-                time_data = self._prepare_timeline_vals(self.duration, fields.Datetime.now())
-                time_data['user_id'] = self.env.user.id
-                self.partner_ids |= self.env.user.partner_id
-                self.env['mrp.workcenter.productivity'].create(time_data)
-                self.state = "progress"
+                time_data = self._prepare_timeline_vals(wo.duration, fields.Datetime.now())
+                time_data['user_id'] = wo.env.user.id
+                wo.partner_ids |= self.env.user.partner_id
+                wo.env['mrp.workcenter.productivity'].create(time_data)
+                wo.state = "progress"
         return res
+    
+    def _get_product_lots(self):
+        lots_data = []
+        all_lots = self.env['stock.lot'].search([('product_id', '=', self.product_id.id)])
+        if all_lots:
+            for rec in all_lots:
+                lots_data.append({'id':rec.id,'name':rec.name})
+        return lots_data
+    
+    def _get_available_product_to_scrap(self):
+        self = self.sudo()
+        lots_data = []
+        all_prodcts = (self.production_id.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel')) | self.production_id.move_finished_ids.filtered(lambda x: x.state == 'done')).mapped('product_id').ids
+        all_lots = self.env['product.product'].search([('id', 'in', all_prodcts)])
+        if all_lots:
+            for rec in all_lots:
+                lots_data.append({'id':rec.id,'name':rec.name})
+        return lots_data
+    
+    def set_qty_producing_portal(self,selected_lot,scrap_qty=False):
+        self = self.sudo()
+        selected_lot = False if selected_lot == '' or selected_lot == None else int(selected_lot)
+        if scrap_qty and self.product_id.product_tmpl_id.tracking == 'none':
+            self.production_id.qty_producing = float(scrap_qty)
+        self.production_id.lot_producing_id = selected_lot
+        self.production_id.set_qty_producing()
     
 class WorkCenter(models.Model):
     _inherit = "mrp.workcenter"
     
     allowed_user_ids = fields.Many2many('res.users',string="Allowed Users")
+    

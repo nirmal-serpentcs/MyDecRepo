@@ -15,21 +15,9 @@
                 There are currently no workorders for your account.
             </div>
             <span class="portal_shopfloor">
-                <t t-if="orders" t-call="portal.portal_table">
-                    <thead>
-                        <tr class="active">
-                            <th>
-                                <span class='d-none d-md-inline'>Work Order #</span>
-                                <span class='d-block d-md-none'>Ref.</span>
-                            </th>
-                            <th class="text-center">Expected Duration</th>
-                            <th class="text-center">Real Duration</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-end"></th>
-                        </tr>
-                    </thead>
-                    <div class="o_content o_component_with_search_panel">
-                        <div class="o_mrp_display_records flex-grow-1 m-2">
+                <t t-if="orders">
+                    <div class="o_mrp_display_portal o_content o_component_with_search_panel">
+                        <div class="o_mrp_display_records d-grid flex-grow-1 m-2" >
                         <t t-foreach="orders" t-as="order">
                             <t t-call="scs_shopfloor.portal_workorder_single">
                                 <t t-set="order" t-value="order"/>

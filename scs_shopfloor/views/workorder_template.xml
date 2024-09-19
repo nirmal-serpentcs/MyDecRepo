@@ -1,58 +1,208 @@
 <?xml version="1.0" ?>
 <odoo>
-    <template id="portal_workorder_single" name="Portal Workorder">
-        <div class="o_mrp_display_record border card rounded m-0 mb-2">
-            <div class="card-header" barcode_trigger="pause">
-                <div class="card-title d-flex justify-content-between align-items-center">
-                    <span class="h5 mb-0 text-truncate">WH/MO/00002</span>
-                    <small class="rounded-pill px-2 text-nowrap text-bg-danger">
-                        <span raw-value="to_close">To Close</span>
-                    </small>
+    <template id="insufficent_scrap_product_modal" name="Insufficient Scrap product">
+        <div class="modal fade insufficent_scrap_product_modal" role="dialog" tabindex="-1">
+            <div class="modal-dialog" style="max-width: 550px;">
+                <div class="modal-content" style="top: 0px; left: 0px;">
+                    <header class="modal-header">
+                        <h4 class="modal-title text-break insufficient-product-header"></h4>
+                        <button type="button" class="btn-close close_scrap_warning_dialog" aria-label="Close" tabindex="-1"></button>
+                    </header>
+                    <div class="modal-body insufficient-product-body">
+
+                    </div>
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close_scrap_warning_dialog" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-primary btn-confirm-scrap-products">Confirm</button>
+                    </div>
                 </div>
-                <div class="d-flex justify-content-between flex-wrap" style="min-height: 25px;">
+            </div>
+        </div>
+    </template>
+    <template id="scrap_product_modal" name="Shopfloor Product Scrap">
+        <div class="modal fade scrap_product_modal" role="dialog" tabindex="-1">
+            <div class="modal-dialog" style="max-width: 550px;">
+                <div class="modal-content" style="top: 0px; left: 0px;">
+                    <header class="modal-header">
+                        <h4 class="modal-title text-break">Scrap Products</h4>
+                        <button type="button" class="btn-close close_scrap_dialog" aria-label="Close" tabindex="-1"></button>
+                    </header>
+                    <div class="modal-body">
+                        <form t-att-action="'/product/scrap/%d' % order.id" method="post" t-att-data-order_id="order.id">
+                            <div class="mb-3">
+                                <!-- <input name='workorder_id' type="hidden" t-att-value='order.id'/> -->
+                                <input name='production_id' type="hidden" t-att-value='order.production_id.id'/>
+                                <label for="productName" class="form-label">Product</label>
+                                <t t-set="available_products" t-value="order._get_available_product_to_scrap()"/>
+                                <div class="o_field_widget col-6">
+                                    <div>
+                                        <div class="o_input_dropdown">
+                                            <select name="product_id" class="form-control">
+                                                <option value=""></option>
+                                                <t t-foreach="available_products" t-as='prod'>
+                                                    <option t-att-value="prod.get('id')"><t t-esc="prod.get('name')"/></option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" name='scrap_qty' class="form-control" id="quantity" value="1"/>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" name="should_replenish" type="checkbox" id="replenishCheckbox"/>
+                                <label class="form-check-label" for="replenishCheckbox">
+                                Replenish Quantities
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close_scrap_dialog" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-primary btn-scrap-products">Scrap Products</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <template id="dropdown_portal_shop_options" name="Shopfloor Dropdown Options">
+        <div class="modal fade dropdown_options_modal" role="dialog" tabindex="-1">
+            <div class="modal-dialog" style="max-width: 550px;">
+                <div class="modal-content" style="top: 0px; left: 0px;">
+                    <header class="modal-header">
+                        <h4 class="modal-title text-break">What do you want to do?</h4>
+                        <button type="button" class="btn-close close-dropdown-dialog" aria-label="Close" tabindex="-1"></button>
+                    </header>
+                    <main class="modal-body overflow-x-hidden p-0">
+                        <div class="o_mrp_menu_dialog p-3 transition-base">
+                            <div class="button_list btn-group-vertical w-100">
+                                <input type="checkbox" hidden="hidden"/>
+                                <button class="btn btn-sm btn-outline-secondary d-flex justify-content-between align-items-center p-2 fs-5 scrap-product" > Scrap <i class="oi oi-chevron-right"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary d-flex justify-content-between align-items-center p-2 fs-5" name="worksheetSuggestion"> Suggest a Worksheet improvement <i class="oi oi-chevron-right"></i>
+                                </button>
+                            </div>
+                            <button class="btn btn-danger p-2 fs-5 w-100 mt-1" name="block"> Block </button>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </template>
+    <template id="register_production_portal_shopfloor" name="Shopfloor Register Production">
+        <div class="modal fade register_production_modal" role="dialog" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Register Production - <t t-esc="order.product_id.name"/></h5>
+                        <button type="button" class="btn-close close-register-dialog" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="o_workorder_bar_content">
+                            <div class="o_quantity row mb-3">
+                                <span class="col-6">Quantity Produced:</span>
+                                <span name="qty_done" class="o_field_widget text-end col-3 pe-2">
+                                    <input type="text" class="o_field_widget text-end col-3 pe-2 form-control" name="register_qty" t-att-value="order.production_id.qty_producing" t-att-readonly="'readonly' if order and order.product_id.tracking == 'serial' else None" />
+                                </span>
+                                <span class="col-3 text-end">
+                                    <span name="product_qty" class="mx-2">/ <t t-esc="order.production_id.product_qty"/></span> Units
+                                </span>
+                            </div>
+                            <div class="o_workorder_lot row mb-3" t-if='order.product_id.tracking == "serial"'>
+                                <span class="text-capitalize col-6">Serial:</span>
+                                <t t-set="lot_ids" t-value="order._get_product_lots()"/>
+                                <div name="lot" class="o_field_widget col-6">
+                                    <div class="lot">
+                                        <div class="o_input_dropdown">
+                                            <select id="finished_lot_id" class="form-control">
+                                                <option value=""></option>
+                                                <t t-foreach="lot_ids" t-as='lot'>
+                                                    <option t-att-value="lot.get('id')" t-att-selected="lot['id'] == order.finished_lot_id.id"><t t-esc="lot.get('name')"/></option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-register-dialog" data-bs-dismiss="modal" aria-label="Close">Close</button>
+                        <button type="button" class="btn btn-primary save-register-changes" t-att-data-order_id='order.id'>Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </template>
+    <template id="portal_workorder_single" name="Portal Workorder">
+        <div class="o_mrp_display_record border card rounded m-1 mb-2" style="height: fit-content;">
+            <t t-if="order.production_state not in ('draft', 'done', 'cancel') and 
+                order.working_state != 'blocked' and 
+                order.state not in ('done', 'cancel') and 
+                not order.is_user_working">
+                <t t-set="curr_action" t-value="'start'"/>
+            </t>
+            <t t-if="order.production_state not in ('draft', 'done', 'cancel') and 
+                order.working_state != 'blocked' and 
+                order.is_user_working">
+                <t t-set="curr_action" t-value="'pause'"/>
+            </t>
+            <div class="card-header cursor-pointer tigger_WO_action" t-att-data-trigger="curr_action" t-att-data-order-id="order.id" t-att-style="'background-color: #badcdf;' if curr_action == 'pause' else ''">
+                <div class="card-title d-flex justify-content-between align-items-center">
+                    <span class="h5 text-truncate"><t t-esc='order.production_id.name'/> - <t t-esc='order.name'/></span>
+                    <span class="text-capitalize d-flex flex-column ms-1">
+                        <div class="bg-light rounded p-1">
+                            <span class="text-center timerEl" t-att-id="'timer'+str(order.id)" t-att-data-order_id='order.id' t-att-data-is_user_working="order.is_user_working"><t t-out="order.duration" t-options="{'widget': 'float_time'}"/></span>
+                        </div>
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between flex-wrap" style="min-height:25px;">
                     <div class="o_finished_product mt-auto mb-0 d-flex mw-100">
-                        <span class="text-truncate me-1">[FURN_9666] Table - </span>
-                        <span class="text-nowrap">1 / 1<span class="ms-1">Unit</span>
+                        <span class="text-truncate me-1"><t t-esc="order.product_id.name"/> - </span>
+                        <span class="text-nowrap"><t t-esc="order.production_id.qty_producing"/> / <t t-esc="order.production_id.product_qty"/><span class="ms-1">Unit</span>
                         </span>
                     </div>
                     <div class="pt-1"></div>
                 </div>
             </div>
             <ul class="list-group list-group-flush">
-                <li class="o_mrp_record_line list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap o_longpressable text-muted">
-                    <span class="flex-grow-1">
-                        <span class="me-1">TImepass</span>
-                        <span></span>
-                    </span>
-                    <button class="btn btn-lg pass fa fa-check px-0 text-success"></button>
+                <li t-if="order.worksheet" class="o_mrp_record_line list-group-item d-flex justify-content-between align-items-center">
+                    <span>Worksheet</span>
+                    <a t-attf-href="/my/shopfloor/worksheet/{{order.id}}" class="btn">
+                        <i class="fa fa-lg fa-lightbulb-o open_worksheet_mo"></i>
+                    </a>
                 </li>
-                <li class="o_mrp_record_line list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap o_longpressable text-muted">
-                    <span class="flex-grow-1">
-                        <span class="me-1">Assembly</span>
-                        <span></span>
-                    </span>
-                    <button class="btn btn-lg pass fa fa-check px-0 text-success"></button>
+                <li t-att-class="'o_mrp_record_line list-group-item d-flex justify-content-between cursor-pointer align-items-center text-muted registerProduction ' + (order and order.finished_lot_id and 'show_lot' or '')" t-att-data-order_id='order.id' >
+                    <span class="text-decoration-line-through"> Register Production </span>
+                    <span t-field="order.finished_lot_id"/>
+                    <t t-if="not order.finished_lot_id">
+                        <span><t t-esc="order.production_id.qty_producing"/> / <t t-esc="order.production_id.product_qty"/></span>
+                    </t>
                 </li>
-                <li class="o_mrp_record_line list-group-item d-flex justify-content-between align-items-center text-muted">
-                    <span class="text-decoration-line-through">Register Production</span>
-                    <span>T0001</span>
-                </li>
-                <li class="o_mrp_record_line list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-truncate">[FURN_8522] Table Top</span>
-                    <button class="btn btn-sm text-nowrap btn-secondary">1<span class="ms-1">Unit</span>
-                    </button>
-                </li>
-                <li class="o_mrp_record_line list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-truncate">[FURN_2333] Table Leg</span>
-                    <button class="btn btn-sm text-nowrap btn-secondary">4<span class="ms-1">Units</span>
-                    </button>
-                </li>
+                <t t-call="scs_shopfloor.register_production_portal_shopfloor">
+                    <t t-set="order" t-value="order"/>
+                </t>
             </ul>
-            <div class="card-footer d-flex justify-content-between align-items-center test bg-white my-1 py-0 pe-0">
-                <button class="btn btn-primary" barcode_trigger="cloMO">Close Production</button>
-                <button class="btn btn-light py-3 px-4 ms-auto rounded-0 fa fa-ellipsis-v"></button>
+            <div t-if="order.state in ['ready','progress']" class="card-footer d-flex justify-content-between align-items-center test bg-white my-1 py-0 pe-0">
+                <button class="btn btn-primary" id="cloWO" t-att-data-trigger="curr_action" t-att-data-order-id="order.id">Mark as Done</button>
+                <button class="btn btn-light py-3 px-4 ms-auto rounded-0 d-flex align-items-center fa fa-ellipsis-v show-dropdown-options"></button>
+                <t t-call="scs_shopfloor.dropdown_portal_shop_options">
+                    <t t-set="order" t-value='order'/>
+                </t>
+                <t t-call='scs_shopfloor.scrap_product_modal'>
+                    <t t-set="order" t-value='order'/>
+                </t>
+                <t t-call='scs_shopfloor.insufficent_scrap_product_modal'>
+                    <t t-set="order" t-value='order'/>
+                </t>
             </div>
         </div>
-
     </template>
+
 </odoo>

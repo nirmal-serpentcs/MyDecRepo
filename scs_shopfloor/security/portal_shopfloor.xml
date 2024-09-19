@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<odoo>
+    <record id="rule_workorder_access_portal" model="ir.rule">
+        <field name="name">Access Work Order Based on Portal User IDs</field>
+        <field name="model_id" ref="mrp.model_mrp_workorder"/>
+        <field name="domain_force">[('workcenter_id.allowed_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_workorder_access_portal_admin" model="ir.rule">
+        <field name="name">Access Work Order Based on Portal Admin IDs</field>
+        <field name="model_id" ref="mrp.model_mrp_workorder"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>
+

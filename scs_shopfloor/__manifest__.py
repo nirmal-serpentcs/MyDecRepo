@@ -13,13 +13,15 @@
     Odoo Digital Signature
     """,
     "data": [
+        # "security/portal_shopfloor.xml",
         "views/workorder_template.xml",
         "views/sale_view.xml",
         "views/invoice_view.xml",
     ],
     'assets': {
         'web.assets_frontend': [
-            'scs_shopfloor/static/src/js/shopfloor.js'
+            'scs_shopfloor/static/src/js/shopfloor.js',
+            'scs_shopfloor/static/src/css/style.scss',
         ]
     },
     "images": ["static/description/docubanner.png"],
